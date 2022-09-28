@@ -1,5 +1,6 @@
 package com.cst438.controllers;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,11 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -134,18 +137,18 @@ public class GradeBookController {
 	
 	@PutMapping("/gradebook/{id}")
 	@Transactional
-	public void updateGradebook (@RequestBody GradebookDTO gradebook, @PathVariable("id") Integer assignmentId ) {
+	public void updateGradebook (@RequestBody GradebookDTO gradebook, @PathVariable("id") Integer assignmentId) {
 		
 		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email) 
 		checkAssignment(assignmentId, email);  // check that user name matches instructor email of the course.
 		
 		// for each grade in gradebook, update the assignment grade in database 
-		System.out.printf("%d %s %d\n",  gradebook.assignmentId, gradebook.assignmentName, gradebook.grades.size());
 		
+		System.out.printf("%d %s %d\n",  gradebook.assignmentId, gradebook.assignmentName, gradebook.grades.size());
 		for (GradebookDTO.Grade g : gradebook.grades) {
 			System.out.printf("%s\n", g.toString());
 			AssignmentGrade ag = assignmentGradeRepository.findById(g.assignmentGradeId).orElse(null);
-			if (ag == null) {
+			if (ag == null) {	
 				throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "Invalid grade primary key. "+g.assignmentGradeId);
 			}
 			ag.setScore(g.grade);
@@ -153,7 +156,7 @@ public class GradeBookController {
 			
 			assignmentGradeRepository.save(ag);
 		}
-		
+	
 	}
 	
 	private Assignment checkAssignment(int assignmentId, String email) {
@@ -169,5 +172,44 @@ public class GradeBookController {
 		
 		return assignment;
 	}
+	@Transactional
+	@PostMapping("/add")
+	public void addAssignment(@RequestParam("id") Integer id, @RequestParam("name") String name, @RequestParam("dueDate") Date dueDate) throws Exception{
+		Assignment a = assignmentRepository.findById(id).orElse(null);
+		if(a == null) {
+			a = new Assignment();
+			a.setName(name);
+			a.setDueDate(dueDate);
+			assignmentRepository.save(a);
+		}else {
+			throw new Exception("Assignment already exists");
+		}
+	}
+	@Transactional
+	@PostMapping("/delete/{id}")
+	public void deleteAssignment(@PathVariable("id") Integer assignmentId) {
+		Assignment a = assignmentRepository.findById(assignmentId).orElse(null);
+		if(a == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid assignment ID."+ assignmentId);
+		}else if(a.getNeedsGrading() > 0 ) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Can't delete an assignment with a grade");
+		}else {
+			assignmentRepository.delete(a);
+		}
+	}
+	@Transactional
+	@PutMapping("/update")
+	public void updateAssignmentName (@RequestParam("id") Integer assignmentId, @RequestParam("name") String name ) {
+		Assignment a = assignmentRepository.findById(assignmentId).orElse(null);
+		if (a == null) {
+			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "Invalid assignment ID. "+assignmentId);
+		}else {
+			a.setName(name);
+//			System.out.printf("%s\n", a.toString());
+			assignmentRepository.save(a);
+		}
+
+	}
+
 
 }
