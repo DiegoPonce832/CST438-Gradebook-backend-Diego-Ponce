@@ -28,7 +28,7 @@ public class AssignmentListDTO {
 			return "[assignmentId=" + assignmentId + ", assignmentName=" + assignmentName + ", dueDate="
 					+ dueDate + ", courseTitle=" + courseTitle + ", courseId=" + courseId + "]";
 		}
-
+		
 
 		@Override
 		public boolean equals(Object obj) {
