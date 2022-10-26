@@ -39,6 +39,7 @@ public class RegistrationServiceMQ extends RegistrationService {
 	// ----- end of configuration of message queue
 
 	// receiver of messages from Registration service
+	//test
 	
 	@RabbitListener(queues = "gradebook-queue")
 	@Transactional
